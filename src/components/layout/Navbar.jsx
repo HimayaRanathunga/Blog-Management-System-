@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import owner from '../../data/owner';
 import useScrollSpy from '../../hooks/useScrollSpy';
 
@@ -61,6 +62,11 @@ export default function Navbar() {
   const [open, setOpen]         = useState(false);
   const active = useScrollSpy(IDS);
 
+  /* The nav points at sections of the home page. Off the home page (e.g. a post
+     page) a bare "#about" would only rewrite the hash, so send them to "/#about". */
+  const onHome = useLocation().pathname === '/';
+  const to = hash => (onHome ? hash : `/${hash}`);
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', fn, { passive: true });
@@ -80,7 +86,7 @@ export default function Navbar() {
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', height: 66 }}>
           {/* Logo */}
-          <a href="#home" style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto', flexShrink: 0, textDecoration: 'none' }}>
+          <a href={to("#home")} style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto', flexShrink: 0, textDecoration: 'none' }}>
             <img src="/new.jpeg" alt="VP" style={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }} />
             <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1 }}>
               {owner.name.split(' ')[0]} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{owner.name.split(' ')[1]}</span>
@@ -91,7 +97,7 @@ export default function Navbar() {
           <ul style={{ display: 'flex', gap: 36, alignItems: 'center' }} className="nav-links">
             {NAV.map(item => (
               <li key={item.href}>
-                <a href={item.href} style={{
+                <a href={to(item.href)} style={{
                   fontSize: 12, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
                   color: active === item.href.slice(1) ? 'var(--accent)' : 'var(--text-dim)',
                   transition: 'color .2s',
@@ -125,7 +131,7 @@ export default function Navbar() {
             ))}
 
             <li>
-              <a href="#newsletter" className="btn btn-gold" style={{ padding: '9px 20px', fontSize: 11 }}>Subscribe Free</a>
+              <a href={to("#newsletter")} className="btn btn-gold" style={{ padding: '9px 20px', fontSize: 11 }}>Subscribe Free</a>
             </li>
           </ul>
 
@@ -143,10 +149,10 @@ export default function Navbar() {
         {open && (
           <div style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(24px)', borderTop: '1px solid var(--border-glass)', padding: '20px 32px 28px', display: 'flex', flexDirection: 'column', gap: 18 }}>
             {NAV.map(item => (
-              <a key={item.href} href={item.href} onClick={() => setOpen(false)}
+              <a key={item.href} href={to(item.href)} onClick={() => setOpen(false)}
                 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-dim)' }}>{item.label}</a>
             ))}
-            <a href="#newsletter" className="btn btn-gold" style={{ justifyContent: 'center', marginTop: 6 }} onClick={() => setOpen(false)}>Subscribe Free</a>
+            <a href={to("#newsletter")} className="btn btn-gold" style={{ justifyContent: 'center', marginTop: 6 }} onClick={() => setOpen(false)}>Subscribe Free</a>
 
             {/* Social icons row */}
             <div style={{ display: 'flex', gap: 20, paddingTop: 4 }}>

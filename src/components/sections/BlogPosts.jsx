@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import useReveal from '../../hooks/useReveal';
 import { blogApi } from '../../services/blogApi';
 
 /* ── Card ── */
-function BlogCard({ post, delay, vis, onOpen }) {
+function BlogCard({ post, delay, vis }) {
   const [hov, setHov] = useState(false);
 
   return (
-    <article
-      onClick={() => onOpen(post)}
+    <Link
+      to={`/blog/${post.slug}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -18,7 +19,7 @@ function BlogCard({ post, delay, vis, onOpen }) {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        cursor: 'pointer',
+        textDecoration: 'none',
         boxShadow: hov ? 'var(--shadow-lg)' : 'var(--shadow)',
         transform: hov ? 'translateY(-6px)' : 'translateY(0)',
         transition: 'all .28s cubic-bezier(0.22,1,0.36,1)',
@@ -80,122 +81,15 @@ function BlogCard({ post, delay, vis, onOpen }) {
           </span>
         </div>
       </div>
-    </article>
-  );
-}
-
-/* ── Reader modal ── */
-function PostModal({ post, onClose }) {
-  const [full, setFull]   = useState(post.content ? post : null);
-  const [err, setErr]     = useState('');
-
-  /* Pull the full rich-text body — the list endpoint only carries the excerpt. */
-  useEffect(() => {
-    if (full) return;
-    let alive = true;
-    blogApi.bySlug(post.slug)
-      .then(p => alive && setFull(p))
-      .catch(() => alive && setErr('Could not load this post.'));
-    return () => { alive = false; };
-  }, [post.slug, full]);
-
-  /* Escape to close + lock background scroll */
-  useEffect(() => {
-    const h = e => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', h);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', h); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div
-      onClick={e => e.target === e.currentTarget && onClose()}
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(5,5,15,0.88)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-    >
-      <div style={{ position: 'relative', background: 'var(--glass-card, #fff)', backdropFilter: 'blur(20px)', border: '1px solid var(--border-gold)', borderRadius: 20, width: '100%', maxWidth: 760, maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.55)' }}>
-
-        {/* Cover */}
-        {post.image && (
-          <div style={{ height: 240, flexShrink: 0, position: 'relative' }}>
-            <img src={post.image} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent 55%)' }} />
-          </div>
-        )}
-
-        {/* Close */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{ position: 'absolute', top: 14, right: 14, zIndex: 1, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-
-        {/* Body */}
-        <div style={{ overflowY: 'auto', padding: '28px 34px 34px' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            {post.tags.map(tag => (
-              <span key={tag} style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 20, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--border-gold)' }}>{tag}</span>
-            ))}
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-              {[post.author, post.date, post.readMins && `${post.readMins} min read`].filter(Boolean).join(' · ')}
-            </span>
-          </div>
-
-          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 'clamp(22px,2.6vw,32px)', fontWeight: 800, lineHeight: 1.25, letterSpacing: '-0.4px', color: 'var(--text-primary)', marginBottom: 12 }}>
-            {post.title}
-          </h2>
-
-          {post.description && (
-            <p style={{ fontSize: 15, color: 'var(--text-dim)', lineHeight: 1.75, marginBottom: 22, fontStyle: 'italic' }}>{post.description}</p>
-          )}
-
-          {err ? (
-            <p style={{ fontSize: 13, color: '#ff6b6b' }}>{err}</p>
-          ) : !full ? (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading…</p>
-          ) : (
-            <div
-              className="post-body"
-              /* Authored by the site owner in the Syncy dashboard rich-text editor. */
-              dangerouslySetInnerHTML={{ __html: full.content }}
-            />
-          )}
-        </div>
-      </div>
-
-      <style>{`
-        .post-body { font-size: 15px; line-height: 1.85; color: var(--text-dim); }
-        .post-body > * + * { margin-top: 14px; }
-        .post-body h1, .post-body h2, .post-body h3 {
-          font-family: 'Playfair Display', serif; font-weight: 800;
-          color: var(--text-primary); line-height: 1.35; margin-top: 26px;
-        }
-        .post-body h1 { font-size: 24px; } .post-body h2 { font-size: 20px; } .post-body h3 { font-size: 17px; }
-        .post-body a { color: var(--accent); text-decoration: underline; }
-        .post-body img { max-width: 100%; height: auto; border-radius: 10px; display: block; }
-        .post-body ul, .post-body ol { padding-left: 22px; }
-        .post-body li + li { margin-top: 6px; }
-        .post-body blockquote {
-          border-left: 3px solid var(--accent); padding-left: 16px;
-          font-style: italic; color: var(--text-muted);
-        }
-        .post-body pre {
-          background: rgba(0,0,0,0.35); padding: 14px 16px; border-radius: 10px;
-          overflow-x: auto; font-size: 13px;
-        }
-      `}</style>
-    </div>
+    </Link>
   );
 }
 
 /* ── Section ── */
 export default function BlogPosts() {
-  const [ref, vis]         = useReveal();
-  const [posts, setPosts]  = useState([]);
-  const [state, setState]  = useState('loading'); // loading | ready | error
-  const [active, setActive] = useState(null);
+  const [ref, vis]        = useReveal();
+  const [posts, setPosts] = useState([]);
+  const [state, setState] = useState('loading'); // loading | ready | error
 
   useEffect(() => {
     let alive = true;
@@ -205,11 +99,10 @@ export default function BlogPosts() {
     return () => { alive = false; };
   }, []);
 
-  const close = useCallback(() => setActive(null), []);
   const v = vis ? ' in' : '';
 
   return (
-    <section style={{ padding: '64px 0', background: 'var(--glass-mid)', backdropFilter: 'var(--blur)', borderTop: '1px solid var(--border-glass)' }}>
+    <section id="posts" style={{ padding: '64px 0', background: 'var(--glass-mid)', backdropFilter: 'var(--blur)', borderTop: '1px solid var(--border-glass)' }}>
       <div ref={ref} className="container">
 
         {/* Header */}
@@ -233,13 +126,11 @@ export default function BlogPosts() {
         ) : (
           <div className={`reveal d2${v} blogposts-grid`} style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24 }}>
             {posts.map((post, i) => (
-              <BlogCard key={post.id} post={post} vis={vis} delay={0.05 + i * 0.07} onOpen={setActive} />
+              <BlogCard key={post.id} post={post} vis={vis} delay={0.05 + i * 0.07} />
             ))}
           </div>
         )}
       </div>
-
-      {active && <PostModal post={active} onClose={close} />}
 
       <style>{`
         .blogposts-grid { grid-template-columns: repeat(3,1fr) !important; }

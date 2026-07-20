@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import './styles/globals.css';
 
 import Navbar     from './components/layout/Navbar';
@@ -12,11 +11,11 @@ import Podcast    from './components/sections/Podcast';
 import Newsletter from './components/sections/Newsletter';
 import CV         from './components/sections/CV';
 import Contact    from './components/sections/Contact';
-import AdminPanel from './components/admin/AdminPanel';
+// AdminPanel (localStorage post manager) is retired — posts are now authored in
+// the Syncy dashboard and read through /api/v1/public/blog. Kept on disk in
+// components/admin/AdminPanel.jsx in case the old flow needs to come back.
 
 export default function App() {
-  const [adminOpen, setAdminOpen] = useState(false);
-
   return (
     <>
       <Navbar />
@@ -32,7 +31,6 @@ export default function App() {
         <Contact />
       </main>
       <Footer />
-      <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />
     </>
   );
 }
